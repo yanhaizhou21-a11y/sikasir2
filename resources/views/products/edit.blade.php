@@ -10,27 +10,48 @@
             @method('PUT')
 
             <div class="mb-4">
-                <label class="block font-medium">Nama Produk</label>
-                <input type="text" name="name" value="{{ old('name', $product->name) }}" required
+                <label class="block font-medium">Nama Produk <span class="text-red-500">*</span></label>
+                <input type="text" name="name" id="name" value="{{ old('name', $product->name) }}" required
                     class="w-full rounded border px-3 py-2">
+                @error('name')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
             </div>
 
             <div class="mb-4">
-                <label class="block font-medium">Barcode</label>
-                <input type="text" name="barcode" value="{{ old('barcode', $product->barcode) }}" required
-                    class="w-full rounded border px-3 py-2">
+                <label class="block font-medium">Deskripsi</label>
+                <textarea name="description" id="description" rows="3"
+                    class="w-full rounded border px-3 py-2">{{ old('description', $product->description) }}</textarea>
+                @error('description')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
             </div>
 
             <div class="mb-4">
-                <label class="block font-medium">Harga Modal</label>
-                <input type="number" name="harga_modal" value="{{ old('harga_modal', $product->harga_modal) }}" required
+                <label class="block font-medium">Barcode <span class="text-red-500">*</span></label>
+                <input type="text" name="barcode" id="barcode" value="{{ old('barcode', $product->barcode) }}" required
                     class="w-full rounded border px-3 py-2">
+                @error('barcode')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
             </div>
 
             <div class="mb-4">
-                <label class="block font-medium">Harga Jual</label>
-                <input type="number" name="harga_jual" value="{{ old('harga_jual', $product->harga_jual) }}" required
+                <label class="block font-medium">Harga Modal <span class="text-red-500">*</span></label>
+                <input type="number" name="harga_modal" id="harga_modal" value="{{ old('harga_modal', $product->harga_modal) }}" min="0" step="1" required
                     class="w-full rounded border px-3 py-2">
+                @error('harga_modal')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div class="mb-4">
+                <label class="block font-medium">Harga Jual <span class="text-red-500">*</span></label>
+                <input type="number" name="harga_jual" id="harga_jual" value="{{ old('harga_jual', $product->harga_jual) }}" min="0" step="1" required
+                    class="w-full rounded border px-3 py-2">
+                @error('harga_jual')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
             </div>
 
             <div class="mb-4">
@@ -81,14 +102,32 @@
 
             <div class="mb-6">
                 <label class="block font-medium">Gambar Produk</label>
-                <input type="file" name="image" accept="image/*"
-                    class="w-full border-gray-300 rounded-md shadow-sm">
-                @if ($product->image)
+                <input type="file" name="image" id="image" accept="image/*"
+                    class="w-full border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500">
+                @error('image')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+                
+                <!-- Current Image Display -->
+                @if ($product->hasImage() && $product->image_url)
                     <div class="mt-3">
-                        <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}"
-                            class="h-24 rounded shadow">
+                        <p class="text-sm text-gray-600 mb-2">Gambar saat ini:</p>
+                        <img src="{{ $product->image_url }}" alt="{{ $product->name }}"
+                            id="current-image" class="h-40 max-h-40 object-cover rounded-lg shadow-sm border border-gray-300"
+                            style="max-width: 320px; max-height: 160px;"
+                            onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2U1ZTdlYiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBub3QgZm91bmQ8L3RleHQ+PC9zdmc+'; this.style.objectFit='contain';">
                     </div>
                 @endif
+
+                <!-- New Image Preview -->
+                <div id="image-preview" class="mt-4 hidden">
+                    <p class="text-sm text-gray-600 mb-2">Preview gambar baru:</p>
+                    <img id="preview-img" src="" alt="Preview" class="max-w-xs h-40 max-h-40 object-cover rounded-lg shadow-sm border border-gray-300"
+                         style="max-width: 320px; max-height: 160px;">
+                    <button type="button" id="remove-preview" class="mt-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
+                        Hapus Preview
+                    </button>
+                </div>
             </div>
 
             <div class="flex gap-4">
@@ -104,4 +143,43 @@
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Image Preview Functionality
+    const imageInput = document.getElementById('image');
+    const previewDiv = document.getElementById('image-preview');
+    const previewImg = document.getElementById('preview-img');
+    const removeBtn = document.getElementById('remove-preview');
+    const currentImage = document.getElementById('current-image');
+
+    if (imageInput) {
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    previewDiv.classList.remove('hidden');
+                    if (currentImage) {
+                        currentImage.classList.add('opacity-50');
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        if (removeBtn) {
+            removeBtn.addEventListener('click', function() {
+                imageInput.value = '';
+                previewDiv.classList.add('hidden');
+                previewImg.src = '';
+                if (currentImage) {
+                    currentImage.classList.remove('opacity-50');
+                }
+            });
+        }
+    }
+});
+</script>
 @endsection

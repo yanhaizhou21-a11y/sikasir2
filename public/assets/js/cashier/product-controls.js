@@ -35,7 +35,7 @@ function updateDetailedHarga_jual(element) {
     if (!form) return;
 
     const productId = form.getAttribute("data-product-id");
-    const baseHarga_jual = parseInt(form.getAttribute("data-base-Harga_jual")) || 0;
+    const baseHarga_jual = parseInt(form.getAttribute("data-base-harga_jual")) || 0;
 
     // Get current selections
     const amount =
@@ -65,7 +65,7 @@ function updateDetailedHarga_jual(element) {
     totalHarga_jual *= amount;
 
     // Update display
-    const harga_jualDisplay = document.getElementById(`total-harga_jual-${productId}`);
+    const harga_jualDisplay = document.getElementById(`total-harga-${productId}`);
     if (harga_jualDisplay) {
         harga_jualDisplay.textContent = `Rp ${totalHarga_jual.toLocaleString("id-ID")}`;
     }
@@ -74,7 +74,7 @@ function updateDetailedHarga_jual(element) {
     form.setAttribute("data-item-harga_jual", totalHarga_jual);
 
     console.log(
-        `harga_jual updated for product ${productId}: Rp ${totalharga_jual.toLocaleString(
+        `harga_jual updated for product ${productId}: Rp ${totalHarga_jual.toLocaleString(
             "id-ID"
         )}`
     );
@@ -143,20 +143,23 @@ function addToOrder(event) {
 
     const totalharga_jual = itemharga_jual * amount;
 
-    // Create order item
+    // Create order item (with consistent casing)
     const orderItem = {
         id: window.orderCounter++,
         productId: productId,
         productName: productName,
         amount: amount,
-        itemharga_jual: itemharga_jual,
-        totalharga_jual: totalharga_jual,
-        costharga_jual: costharga_jual,
-        totalCostharga_jual: costharga_jual * amount,
+        itemHarga_jual: itemharga_jual,
+        totalHarga_jual: totalharga_jual,
+        costHarga_jual: costHarga_jual,
+        totalCostHarga_jual: costHarga_jual * amount,
         customizations: customizations,
     };
 
     // Add to order
+    if (!window.orderItems) {
+        window.orderItems = [];
+    }
     window.orderItems.push(orderItem);
 
     // Update display
@@ -211,18 +214,16 @@ function resetForm(form) {
         if (noTopping) noTopping.checked = true;
 
         // Update harga_jual display
-        updateDetailedharga_jual(amountInput);
+        updateDetailedHarga_jual(amountInput);
     }
 }
 
 // Export functions for global access
 window.decrementAmount = decrementAmount;
 window.incrementAmount = incrementAmount;
-window.updateDetailedharga_jual = updateDetailedharga_jual;
+window.updateDetailedHarga_jual = updateDetailedHarga_jual;
+window.updateDetailedharga_jual = updateDetailedHarga_jual; // Legacy compatibility
 window.addToOrder = addToOrder;
-
-// Legacy compatibility
-window.updateharga_jual = updateDetailedharga_jual;
 // Show message function
 function showMessage(message, type = "info") {
     const messageContainer = document.getElementById("message-container");

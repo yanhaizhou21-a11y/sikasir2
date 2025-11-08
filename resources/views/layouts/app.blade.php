@@ -19,7 +19,7 @@
     @stack('styles')
 </head>
 
-<body class="bg-gray-100 text-gray-900">
+<body class="bg-gray-100 text-gray-900 overflow-x-hidden">
     {{-- Sidebar --}}
     @include('components.sidebar')
 
@@ -29,7 +29,7 @@
         @include('components.navbar')
 
         {{-- Main Content --}}
-        <main class="flex-1 p-6 overflow-y-auto">
+        <main class="flex-1 p-6 pt-16 overflow-y-auto">
             @yield('content')
         </main>
     </div>

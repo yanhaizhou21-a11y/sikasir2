@@ -1,6 +1,6 @@
 // payment-system.js - Payment System Functions
 
-// Calculate grand total
+        // Calculate grand total
 function calculateGrandTotal() {
     const discountPercent =
         parseFloat(document.getElementById("discount-input")?.value) || 0;
@@ -8,7 +8,7 @@ function calculateGrandTotal() {
         parseFloat(document.getElementById("tax-input")?.value) || 0;
 
     const subtotal = window.orderItems.reduce(
-        (sum, item) => sum + item.totalCostHarga_jual,
+        (sum, item) => sum + (item.totalHarga_jual || 0),
         0
     );
     const discountAmount = (subtotal * discountPercent) / 100;
@@ -211,23 +211,50 @@ function submitCashPayment(
             name_user:
                 document.getElementById("transaction_name_user")?.value ||
                 "Unknown User",
-            payment_method: "tunai",
+            payment_method: "cash",
             timestamp: getCurrentTimestamp(),
             cash_received: cashReceived,
             change_amount: change,
         };
 
-        // Update hidden form fields
-        updateTransactionForm("transactionForm", transactionData);
+        // Prepare products array from orderItems
+        const products = window.orderItems.map(item => ({
+            product_id: item.productId,
+            qty: item.amount
+        }));
+        
+        transactionData.products = products;
 
-        // Submit the form
+        // Update hidden form fields in transactionForm
         const form = document.getElementById("transactionForm");
-        if (form) {
-            form.submit();
-        } else {
-            // Fallback: simulate successful payment
-            handlePaymentSuccess("cash", grandTotal, totalCostHarga_jual);
+        if (!form) {
+            console.error("Transaction form not found!");
+            showMessage("Form error. Please refresh the page.", "error");
+            return;
         }
+
+        // Update form fields
+        updateTransactionForm("transactionForm", transactionData);
+        
+        // Clear existing product inputs to avoid duplicates
+        form.querySelectorAll('input[name^="products["]').forEach(input => input.remove());
+        
+        // Add products as hidden inputs
+        products.forEach((product, index) => {
+            const productIdInput = document.createElement('input');
+            productIdInput.type = 'hidden';
+            productIdInput.name = `products[${index}][product_id]`;
+            productIdInput.value = product.product_id;
+            form.appendChild(productIdInput);
+            
+            const qtyInput = document.createElement('input');
+            qtyInput.type = 'hidden';
+            qtyInput.name = `products[${index}][qty]`;
+            qtyInput.value = product.qty;
+            form.appendChild(qtyInput);
+        });
+        
+        form.submit();
     } catch (error) {
         console.error("Error processing cash payment:", error);
         showMessage("Error processing payment. Please try again.", "error");
@@ -251,17 +278,44 @@ function submitQRISPayment(grandTotal, totalCostHarga_jual) {
             timestamp: getCurrentTimestamp(),
         };
 
+        // Prepare products array from orderItems
+        const products = window.orderItems.map(item => ({
+            product_id: item.productId,
+            qty: item.amount
+        }));
+        
+        transactionData.products = products;
+
         // Update hidden form fields
         updateTransactionForm("transactionQRISForm", transactionData);
 
         // Submit the form
         const form = document.getElementById("transactionQRISForm");
-        if (form) {
-            form.submit();
-        } else {
-            // Fallback: simulate successful payment
-            handlePaymentSuccess("qris", grandTotal, totalCostHarga_jual);
+        if (!form) {
+            console.error("QRIS transaction form not found!");
+            showMessage("Form error. Please refresh the page.", "error");
+            return;
         }
+
+        // Clear existing product inputs to avoid duplicates
+        form.querySelectorAll('input[name^="products["]').forEach(input => input.remove());
+        
+        // Add products as hidden inputs
+        products.forEach((product, index) => {
+            const productIdInput = document.createElement('input');
+            productIdInput.type = 'hidden';
+            productIdInput.name = `products[${index}][product_id]`;
+            productIdInput.value = product.product_id;
+            form.appendChild(productIdInput);
+            
+            const qtyInput = document.createElement('input');
+            qtyInput.type = 'hidden';
+            qtyInput.name = `products[${index}][qty]`;
+            qtyInput.value = product.qty;
+            form.appendChild(qtyInput);
+        });
+        
+        form.submit();
     } catch (error) {
         console.error("Error processing QRIS payment:", error);
         showMessage("Error processing payment. Please try again.", "error");
@@ -334,8 +388,135 @@ function generateAndPrintReceipt(paymentMethod, totalAmount) {
     }, 500);
 }
 
+// Process Debit payment
+function processDebitPayment() {
+    if (window.orderItems.length === 0) {
+        showMessage("No items in order!", "warning");
+        return;
+    }
+
+    const grandTotal = calculateGrandTotal();
+    const totalCostHarga_jual = window.orderItems.reduce(
+        (sum, item) => sum + item.totalCostHarga_jual,
+        0
+    );
+
+    // Show debit payment confirmation
+    if (typeof Swal !== "undefined") {
+        showDebitPaymentModal(grandTotal, totalCostHarga_jual);
+    } else {
+        // Fallback confirmation
+        if (
+            confirm(
+                `Process debit payment of Rp ${grandTotal.toLocaleString(
+                    "id-ID"
+                )}?`
+            )
+        ) {
+            submitDebitPayment(grandTotal, totalCostHarga_jual);
+        }
+    }
+}
+
+// Show debit payment modal
+function showDebitPaymentModal(grandTotal, totalCostHarga_jual) {
+    Swal.fire({
+        title: "Debit Card Payment",
+        html: `
+            <div class="text-center">
+                <div class="bg-gray-100 p-4 rounded-lg mb-4">
+                    <h3 class="text-lg font-semibold mb-2">Total Amount</h3>
+                    <p class="text-2xl font-bold text-purple-600">Rp ${grandTotal.toLocaleString(
+                        "id-ID"
+                    )}</p>
+                </div>
+                <div class="bg-white border-2 border-dashed border-gray-300 rounded-lg p-8 mb-4">
+                    <div class="text-6xl mb-4">💳</div>
+                    <p class="text-gray-600 mb-2">Card Payment Terminal</p>
+                    <p class="text-sm text-gray-500">Please insert or tap your debit card</p>
+                </div>
+                <div class="text-sm text-gray-600">
+                    <p>Amount: Rp ${grandTotal.toLocaleString("id-ID")}</p>
+                    <p class="font-medium mt-2">Confirm payment has been processed</p>
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: "Payment Confirmed",
+        cancelButtonText: "Cancel",
+        confirmButtonColor: "#9333ea",
+        cancelButtonColor: "#6b7280",
+    }).then((result) => {
+        if (result.isConfirmed) {
+            submitDebitPayment(grandTotal, totalCostHarga_jual);
+        }
+    });
+}
+
+// Submit Debit payment
+function submitDebitPayment(grandTotal, totalCostHarga_jual) {
+    try {
+        // Show processing message
+        showMessage("Processing debit payment...", "info");
+
+        // Prepare transaction data
+        const transactionData = {
+            subtotal: grandTotal,
+            total_cost_harga_jual: totalCostHarga_jual,
+            name_user:
+                document.getElementById("transaction_debit_name_user")?.value ||
+                "Unknown User",
+            payment_method: "debit",
+            timestamp: getCurrentTimestamp(),
+        };
+
+        // Prepare products array from orderItems
+        const products = window.orderItems.map(item => ({
+            product_id: item.productId,
+            qty: item.amount
+        }));
+        
+        transactionData.products = products;
+
+        // Update hidden form fields
+        updateTransactionForm("transactionDebitForm", transactionData);
+
+        // Submit the form
+        const form = document.getElementById("transactionDebitForm");
+        if (!form) {
+            console.error("Debit transaction form not found!");
+            showMessage("Form error. Please refresh the page.", "error");
+            return;
+        }
+
+        // Clear existing product inputs to avoid duplicates
+        form.querySelectorAll('input[name^="products["]').forEach(input => input.remove());
+        
+        // Add products as hidden inputs
+        products.forEach((product, index) => {
+            const productIdInput = document.createElement('input');
+            productIdInput.type = 'hidden';
+            productIdInput.name = `products[${index}][product_id]`;
+            productIdInput.value = product.product_id;
+            form.appendChild(productIdInput);
+            
+            const qtyInput = document.createElement('input');
+            qtyInput.type = 'hidden';
+            qtyInput.name = `products[${index}][qty]`;
+            qtyInput.value = product.qty;
+            form.appendChild(qtyInput);
+        });
+        
+        form.submit();
+    } catch (error) {
+        console.error("Error processing debit payment:", error);
+        showMessage("Error processing payment. Please try again.", "error");
+    }
+}
+
 // Export functions for global access
 window.processPayment = processPayment;
 window.processQRISPayment = processQRISPayment;
+window.processDebitPayment = processDebitPayment;
 window.calculateGrandTotal = calculateGrandTotal;
 window.handlePaymentSuccess = handlePaymentSuccess;

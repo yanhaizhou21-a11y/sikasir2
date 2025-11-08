@@ -1,5 +1,5 @@
 <header
-    class="fixed top-0 left-64 right-0 z-30 bg-[#ab5c16] text-stone-50 shadow-sm border-b border-gray-200 select-none h-16">
+    class="fixed top-0 left-0 lg:left-64 right-0 z-30 bg-[#ab5c16] text-stone-50 shadow-sm border-b border-gray-200 select-none h-16">
     <div class="flex items-center justify-between px-4 h-full">
         <!-- Mobile Menu -->
         <button class="lg:hidden p-2 text-fuchsia-50 hover:bg-amber-950 rounded-lg" onclick="toggleSidebar()">
@@ -33,13 +33,14 @@
             </div>
 
             <!-- Profile -->
-            <a href="{{ route('profile.edit') }}" class="flex items-center gap-2 p-2 hover:bg-amber-950 rounded-lg">
-                 @if(request()->routeIs('dashboard'))
-                <span class="text-sm font-medium text-fuchsia-50">{{ auth()->user()->name }} -
-                    {{ auth()->user()->role }}</span>
-                @endif
-                <div class="w-8 h-8 bg-gray-800/10 rounded-full flex items-center justify-center">
-                    <i class="bi bi-person-circle text-fuchsia-50"></i>
+            <a href="{{ route('profile.edit') }}" class="flex items-center gap-2 p-1.5 hover:bg-amber-950 rounded-lg transition-colors">
+                <span class="hidden md:block text-xs font-medium text-fuchsia-50 max-w-48 whitespace-normal break-words">{{ auth()->user()->name }}</span>
+                <div class="w-9 h-9 rounded-full overflow-hidden border-2 border-white/20 flex items-center justify-center flex-shrink-0">
+                    <img src="{{ auth()->user()->avatar_url }}" 
+                         alt="{{ auth()->user()->name }}"
+                         class="w-full h-full object-cover"
+                         style="max-width: 36px; max-height: 36px;"
+                         onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=e17f12&color=fff&size=36';">
                 </div>
             </a>
         </div>

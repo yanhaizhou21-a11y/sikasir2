@@ -3,11 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Product extends Model
 {
     protected $fillable = [
         'name',
+        'description',
         'barcode',
         'harga_modal',
         'harga_jual',
@@ -35,10 +37,38 @@ class Product extends Model
     }
 
     public function ingredients()
-{
-    return $this->belongsToMany(Ingredient::class, 'product_ingredients')
-                ->withPivot('quantity')
-                ->withTimestamps();
-}
+    {
+        return $this->belongsToMany(Ingredient::class, 'product_ingredients')
+                    ->withPivot('quantity')
+                    ->withTimestamps();
+    }
 
+    /**
+     * Get the full URL for the product image
+     * 
+     * @return string|null
+     */
+    public function getImageUrlAttribute()
+    {
+        if (!$this->image) {
+            return null;
+        }
+
+        // Check if image exists in storage
+        if (Storage::disk('public')->exists($this->image)) {
+            return asset('storage/' . $this->image);
+        }
+
+        return null;
+    }
+
+    /**
+     * Check if product has a valid image
+     * 
+     * @return bool
+     */
+    public function hasImage()
+    {
+        return $this->image && Storage::disk('public')->exists($this->image);
+    }
 }

@@ -9,25 +9,48 @@
             @csrf
 
             <div class="mb-4">
-                <label for="name" class="block text-sm font-medium text-gray-700">Nama Produk</label>
-                <input type="text" name="name" id="name" required
+                <label for="name" class="block text-sm font-medium text-gray-700">Nama Produk <span class="text-red-500">*</span></label>
+                <input type="text" name="name" id="name" value="{{ old('name') }}" required
                     class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                @error('name')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
             </div>
 
             <div class="mb-4">
-                <label for="barcode" class="block text-sm font-medium text-gray-700">Barcode</label>
-                <input type="text" name="barcode" id="barcode" required
+                <label for="description" class="block text-sm font-medium text-gray-700">Deskripsi</label>
+                <textarea name="description" id="description" rows="3"
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">{{ old('description') }}</textarea>
+                @error('description')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div class="mb-4">
+                <label for="barcode" class="block text-sm font-medium text-gray-700">Barcode <span class="text-red-500">*</span></label>
+                <input type="text" name="barcode" id="barcode" value="{{ old('barcode') }}" required
                     class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                @error('barcode')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
             </div>
 
             <div class="mb-4">
-                <label for="harga_modal" class="block font-medium">Harga Modal</label>
-                <input type="number" name="harga_modal" required class="w-full rounded border px-3 py-2">
+                <label for="harga_modal" class="block font-medium">Harga Modal <span class="text-red-500">*</span></label>
+                <input type="number" name="harga_modal" id="harga_modal" value="{{ old('harga_modal') }}" min="0" step="1" required 
+                    class="w-full rounded border px-3 py-2">
+                @error('harga_modal')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
             </div>
 
             <div class="mb-4">
-                <label for="harga_jual" class="block font-medium">Harga Jual</label>
-                <input type="number" name="harga_jual" required class="w-full rounded border px-3 py-2">
+                <label for="harga_jual" class="block font-medium">Harga Jual <span class="text-red-500">*</span></label>
+                <input type="number" name="harga_jual" id="harga_jual" value="{{ old('harga_jual') }}" min="0" step="1" required 
+                    class="w-full rounded border px-3 py-2">
+                @error('harga_jual')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
             </div>
 
             <div class="mb-4">
@@ -70,7 +93,18 @@
             <div class="mb-6">
                 <label for="image" class="block text-sm font-medium text-gray-700">Gambar Produk</label>
                 <input type="file" name="image" id="image" accept="image/*"
-                    class="mt-1 block w-full text-sm text-gray-700 border border-gray-300 rounded-md shadow-sm focus:outline-none">
+                    class="mt-1 block w-full text-sm text-gray-700 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                @error('image')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+                <!-- Image Preview -->
+                <div id="image-preview" class="mt-4 hidden">
+                    <img id="preview-img" src="" alt="Preview" class="max-w-xs h-40 max-h-40 object-cover rounded-lg shadow-sm border border-gray-300"
+                         style="max-width: 320px; max-height: 160px;">
+                    <button type="button" id="remove-preview" class="mt-2 px-3 py-1.5 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors">
+                        Hapus Preview
+                    </button>
+                </div>
             </div>
 
             <div class="flex gap-4">
@@ -99,6 +133,30 @@ function filterSubcategories(categoryId) {
 document.addEventListener('DOMContentLoaded', () => {
     const selectedCategory = document.getElementById('category_id').value;
     filterSubcategories(selectedCategory);
+
+    // Image Preview Functionality
+    const imageInput = document.getElementById('image');
+    const previewDiv = document.getElementById('image-preview');
+    const previewImg = document.getElementById('preview-img');
+    const removeBtn = document.getElementById('remove-preview');
+
+    imageInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                previewDiv.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    removeBtn.addEventListener('click', function() {
+        imageInput.value = '';
+        previewDiv.classList.add('hidden');
+        previewImg.src = '';
+    });
 });
 </script>
 @endsection

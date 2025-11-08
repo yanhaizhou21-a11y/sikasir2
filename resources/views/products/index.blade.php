@@ -40,11 +40,23 @@
                             <td class="py-3 px-4">Rp {{ number_format($product->harga_jual, 0, ',', '.') }}</td>
                             <td class="py-3 px-4">Rp {{ number_format($product->margin, 0, ',', '.') }}</td>
                             <td class="py-3 px-4 text-center">
-                                @if ($product->image)
-                                    <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}"
-                                        class="w-16 h-16 object-cover rounded-lg inline hover:scale-150 transition-transform duration-300">
+                                @if ($product->hasImage() && $product->image_url)
+                                    <div class="relative group inline-block">
+                                        <img src="{{ $product->image_url }}" alt="{{ $product->name }}"
+                                            class="w-16 h-16 object-cover rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all duration-300"
+                                            style="max-width: 64px; max-height: 64px;"
+                                            onclick="showImageModal('{{ $product->image_url }}', '{{ $product->name }}')"
+                                            data-product-image="{{ $product->image_url }}"
+                                            data-product-name="{{ $product->name }}">
+                                        <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 rounded-lg transition-opacity duration-300 flex items-center justify-center">
+                                            <i class="bi bi-zoom-in text-white opacity-0 group-hover:opacity-100 transition-opacity text-xs"></i>
+                                        </div>
+                                    </div>
                                 @else
-                                    <span class="text-gray-400">No Image</span>
+                                    <div class="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center mx-auto">
+                                        <i class="bi bi-image text-gray-400 text-xl"></i>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">No Image</p>
                                 @endif
                             </td>
                             <td class="py-3 px-4 text-center">
@@ -124,6 +136,16 @@
             $(document).ready(function() {
                 $('#productsTable').DataTable({
                     responsive: true,
+                    drawCallback: function(settings) {
+                        // Re-initialize image modals after DataTable redraws
+                        $('img[data-product-image]').off('click').on('click', function() {
+                            const imageUrl = $(this).data('product-image');
+                            const productName = $(this).data('product-name');
+                            if (imageUrl && productName) {
+                                showImageModal(imageUrl, productName);
+                            }
+                        });
+                    },
                     language: {
                         search: "Cari:",
                         lengthMenu: "Tampilkan _MENU_ entri",
@@ -151,6 +173,23 @@
                 }).then((result) => {
                     if (result.isConfirmed) {
                         document.getElementById(`delete-form-${id}`).submit();
+                    }
+                });
+            }
+
+            // Image Modal Function
+            function showImageModal(imageSrc, productName) {
+                Swal.fire({
+                    html: `<img src="${imageSrc}" alt="${productName}" class="max-w-full max-h-80 rounded-lg shadow-lg mx-auto object-contain" style="max-width: 600px; max-height: 320px;">`,
+                    title: productName,
+                    showConfirmButton: true,
+                    confirmButtonText: 'Tutup',
+                    width: 'auto',
+                    maxWidth: '90vw',
+                    padding: '1.5rem',
+                    background: '#fff',
+                    customClass: {
+                        popup: 'rounded-lg'
                     }
                 });
             }

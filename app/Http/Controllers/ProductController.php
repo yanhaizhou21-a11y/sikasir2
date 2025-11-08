@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Subcategory;
 use App\Models\Ingredient;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -28,16 +29,23 @@ class ProductController extends Controller
     {
         $request->validate([
             'name'           => 'required|string|max:255',
+            'description'    => 'nullable|string|max:1000',
             'barcode'        => 'required|string|unique:products,barcode',
-            'harga_modal'    => 'required|numeric',
-            'harga_jual'     => 'required|numeric',
+            'harga_modal'    => 'required|numeric|min:0',
+            'harga_jual'     => 'required|numeric|min:0',
             'category_id'    => 'nullable|exists:categories,id',
             'subcategory_id' => 'nullable|exists:subcategories,id',
-            'image'          => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'image'          => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
+
+        // Validate that harga_jual is greater than or equal to harga_modal
+        if ($request->harga_jual < $request->harga_modal) {
+            return back()->withErrors(['harga_jual' => 'Harga jual harus lebih besar atau sama dengan harga modal.'])->withInput();
+        }
 
         $data = $request->only([
             'name',
+            'description',
             'barcode',
             'harga_modal',
             'harga_jual',
@@ -80,16 +88,23 @@ class ProductController extends Controller
     {
         $request->validate([
             'name'           => 'required|string|max:255',
+            'description'    => 'nullable|string|max:1000',
             'barcode'        => 'required|string|unique:products,barcode,' . $product->id,
-            'harga_modal'    => 'required|numeric',
-            'harga_jual'     => 'required|numeric',
+            'harga_modal'    => 'required|numeric|min:0',
+            'harga_jual'     => 'required|numeric|min:0',
             'category_id'    => 'nullable|exists:categories,id',
             'subcategory_id' => 'nullable|exists:subcategories,id',
-            'image'          => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'image'          => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
+
+        // Validate that harga_jual is greater than or equal to harga_modal
+        if ($request->harga_jual < $request->harga_modal) {
+            return back()->withErrors(['harga_jual' => 'Harga jual harus lebih besar atau sama dengan harga modal.'])->withInput();
+        }
 
         $data = $request->only([
             'name',
+            'description',
             'barcode',
             'harga_modal',
             'harga_jual',
@@ -98,6 +113,10 @@ class ProductController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
+            // Delete old image if exists
+            if ($product->image && Storage::disk('public')->exists($product->image)) {
+                Storage::disk('public')->delete($product->image);
+            }
             $filename = $request->file('image')->store('products', 'public');
             $data['image'] = $filename;
         }

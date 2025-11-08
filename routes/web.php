@@ -15,6 +15,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\TableController;
 use App\Http\Controllers\IngredientController;
+use App\Http\Controllers\ReportsController;
+use App\Http\Controllers\SettingsController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -63,6 +65,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::resource('categories', CategoryController::class);
     Route::resource('subcategories', SubcategoryController::class);
     Route::resource('transactions', TransactionController::class);
+    Route::post('transactions/{transaction}/confirm', [TransactionController::class, 'confirmPayment'])->name('transactions.confirm');
+    Route::get('transactions/{transaction}/receipt', [TransactionController::class, 'receipt'])->name('transactions.receipt');
 });
 
 // ==========================
@@ -84,6 +88,8 @@ Route::middleware(['auth', 'role:kasir'])->prefix('kasir')->name('kasir.')->grou
     Route::get('/', [KasirController::class, 'index'])->name('index'); // ✅ route kasir.index
     Route::get('/dashboard', [KasirController::class, 'index'])->name('dashboard');
     Route::resource('transaksi', TransactionController::class)->only(['index', 'store']);
+    Route::post('transaksi/{transaction}/confirm', [TransactionController::class, 'confirmPayment'])->name('transaksi.confirm');
+    Route::get('transaksi/{transaction}/receipt', [TransactionController::class, 'receipt'])->name('transaksi.receipt');
 });
 
 
@@ -92,6 +98,8 @@ Route::middleware(['auth', 'role:kasir'])->prefix('kasir')->name('kasir.')->grou
 // ==========================
 Route::middleware(['auth', 'role:bar'])->prefix('bar')->name('bar.')->group(function () {
     Route::get('/dashboard', [BarController::class, 'index'])->name('dashboard');
+    Route::post('/orders/{order}/status', [BarController::class, 'updateStatus'])->name('orders.update-status');
+    Route::post('/orders/{order}/ready', [BarController::class, 'markAsReady'])->name('orders.ready');
 });
 
 // ==========================
@@ -99,10 +107,16 @@ Route::middleware(['auth', 'role:bar'])->prefix('bar')->name('bar.')->group(func
 // ==========================
 Route::middleware(['auth', 'role:kitchen'])->prefix('kitchen')->name('kitchen.')->group(function () {
     Route::get('/dashboard', [KitchenController::class, 'index'])->name('dashboard');
+    Route::post('/orders/{order}/status', [KitchenController::class, 'updateStatus'])->name('orders.update-status');
+    Route::post('/orders/{order}/ready', [KitchenController::class, 'markAsReady'])->name('orders.ready');
 });
 
-// table routes
-Route::resource('tables', TableController::class);
+// ==========================
+// ✅ Table routes (requires authentication)
+// ==========================
+Route::middleware(['auth'])->group(function () {
+    Route::resource('tables', TableController::class);
+});
 
 // ==========================
 // ✅ Ingredient routes (Admin, Bar, Kitchen)
@@ -137,10 +151,22 @@ Route::middleware(['auth', 'role:kitchen'])
 
 
 // ==========================
-// ✅ Profile (semua user login)
+// ✅ Common Routes (semua user login)
 // ==========================
 Route::middleware(['auth'])->group(function () {
+    // Profile routes
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Reports routes (admin, owner, kasir)
+    Route::middleware(['role:admin|owner|kasir'])->group(function () {
+        Route::get('/reports', [ReportsController::class, 'index'])->name('reports.index');
+    });
+
+    // Settings routes (admin only)
+    Route::middleware(['role:admin'])->group(function () {
+        Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+        Route::patch('/settings', [SettingsController::class, 'update'])->name('settings.update');
+    });
 });

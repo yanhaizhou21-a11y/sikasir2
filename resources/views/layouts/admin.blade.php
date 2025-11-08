@@ -33,7 +33,7 @@
     </style>
 </head>
 
-<body class="min-h-screen bg-stone-50">
+<body class="min-h-screen bg-stone-50 overflow-x-hidden">
     {{-- Sidebar --}}
     <aside id="sidebar"
         class="sidebar fixed top-0 left-0 z-50 h-full w-64 bg-[#005281] text-white shadow-lg">
@@ -49,12 +49,10 @@
     <div id="main-content"
         class="flex-1 flex flex-col transition-all duration-300 lg:ml-64">
         {{-- Navbar --}}
-        <header class="fixed top-0 right-0 left-0 lg:left-64 z-40 bg-white shadow-sm">
-            @include('components.navbar')
-        </header>
+        @include('components.navbar')
 
         {{-- Page Content --}}
-        <main class="mt-16 overflow-y-auto h-[calc(100vh-4rem)] p-6">
+        <main class="pt-16 overflow-y-auto h-[calc(100vh-4rem)] p-6">
             @yield('content')
         </main>
     </div>

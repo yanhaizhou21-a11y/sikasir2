@@ -3,8 +3,17 @@
 // Global variables
 let currentViewMode = "detailed";
 let currentCategory = "all";
-let orderItems = [];
-let orderCounter = 1;
+
+// Initialize order items if not already done
+if (typeof window.orderItems === 'undefined') {
+    window.orderItems = [];
+}
+if (typeof window.orderCounter === 'undefined') {
+    window.orderCounter = 1;
+}
+
+let orderItems = window.orderItems;
+let orderCounter = window.orderCounter;
 
 // Initialize on page load
 document.addEventListener("DOMContentLoaded", () => {
@@ -213,6 +222,6 @@ window.updateView = updateView;
 window.scrollFilter = scrollFilter;
 window.clearSearchInput = clearSearchInput;
 window.currentViewMode = currentViewMode;
-window.orderItems = orderItems;
-window.orderCounter = orderCounter;
+window.orderItems = window.orderItems || orderItems;
+window.orderCounter = window.orderCounter || orderCounter;
 // Function to update date and time display     

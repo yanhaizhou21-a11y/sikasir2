@@ -41,14 +41,6 @@
             </div>
 
             <!-- Filter Section -->
-            @php
-                $categories = ['Makanan', 'Minuman', 'Shisha'];
-                // $subcategories = [
-                //     'Makanan' => ['Snack', 'Main Course', 'Spicy', 'Saus Extra'],
-                //     'Minuman' => ['Coffee', 'Non-Coffee', 'Milky', 'Tea'],
-                //     'Shisha' => ['Tobacco', 'No Tobacco'],
-                // ];
-            @endphp
 
             <div class="px-4 py-4 bg-white shadow-sm rounded-lg mx-4 mt-4">
                 <div class="relative">
@@ -71,9 +63,9 @@
                                 @foreach ($categories as $category)
                                     <button
                                         class="relative filter-btn text-sm font-medium text-gray-700 after:block after:mt-1 after:h-0.5 after:w-0 after:bg-orange-500 after:transition-all after:duration-300 hover:after:w-full"
-                                        data-category="{{ $category }}"
-                                        onclick="updateSubcategories('{{ $category }}')">
-                                        {{ $category }}
+                                        data-category="{{ $category->name }}"
+                                        onclick="updateSubcategories('{{ $category->name }}')">
+                                        {{ $category->name }}
                                     </button>
                                 @endforeach
                             </div>
@@ -117,9 +109,29 @@
 
                             <div class="flex gap-6">
                                 <!-- Product Image -->
-                                <figure class="w-1/3 flex-shrink-0">
-                                    <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}"
-                                        class="w-full h-56 object-cover object-center rounded-lg">
+                                <figure class="w-1/3 flex-shrink-0 max-w-xs">
+                                    @if($product->hasImage() && $product->image_url)
+                                        <img src="{{ $product->image_url }}" alt="{{ $product->name }}"
+                                            class="w-full h-48 max-h-48 object-cover object-center rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 cursor-pointer"
+                                            style="max-width: 100%; max-height: 192px;"
+                                            onclick="showImageModal('{{ $product->image_url }}', '{{ $product->name }}')"
+                                            data-product-image="{{ $product->image_url }}"
+                                            data-product-name="{{ $product->name }}"
+                                            onerror="handleImageError(this);">
+                                        <div class="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center hidden" data-fallback-image>
+                                            <div class="text-center">
+                                                <i class="bi bi-image text-gray-400 text-4xl mb-2"></i>
+                                                <p class="text-gray-500 text-xs">No Image</p>
+                                            </div>
+                                        </div>
+                                    @else
+                                        <div class="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center">
+                                            <div class="text-center">
+                                                <i class="bi bi-image text-gray-400 text-4xl mb-2"></i>
+                                                <p class="text-gray-500 text-xs">No Image</p>
+                                            </div>
+                                        </div>
+                                    @endif
                                 </figure>
 
                                 <!-- Controls -->
@@ -260,13 +272,33 @@
                             data-product-id="{{ $product->id }}" data-base-harga_jual="{{ $product->harga_jual }}"
                             data-item-harga_jual="{{ $product->harga_jual }}" data-customizations="[]">
 
-                            <div class="w-full h-[140px] overflow-hidden rounded-t-lg">
-                                <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}"
-                                    class="object-cover w-full h-full transition-transform duration-300 ease-in-out hover:scale-105" />
+                            <div class="w-full h-32 overflow-hidden rounded-t-lg bg-gray-200 relative">
+                                @if($product->hasImage() && $product->image_url)
+                                    <img src="{{ $product->image_url }}" alt="{{ $product->name }}"
+                                        class="object-cover w-full h-full transition-transform duration-300 ease-in-out hover:scale-105 cursor-pointer"
+                                        style="max-width: 100%; max-height: 128px;"
+                                        onclick="showImageModal('{{ $product->image_url }}', '{{ $product->name }}')"
+                                        data-product-image="{{ $product->image_url }}"
+                                        data-product-name="{{ $product->name }}"
+                                        onerror="handleImageError(this);" />
+                                    <div class="w-full h-full flex items-center justify-center bg-gray-100 absolute inset-0 hidden" data-fallback-image>
+                                        <div class="text-center">
+                                            <i class="bi bi-image text-gray-400 text-3xl"></i>
+                                            <p class="text-gray-500 text-xs mt-1">No Image</p>
+                                        </div>
+                                    </div>
+                                @else
+                                    <div class="w-full h-full flex items-center justify-center bg-gray-100">
+                                        <div class="text-center">
+                                            <i class="bi bi-image text-gray-400 text-3xl"></i>
+                                            <p class="text-gray-500 text-xs mt-1">No Image</p>
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
 
                             <div class="px-3 pt-2 pb-1">
-                                <h3 class="font-semibold text-sm text-[#005281] leading-tight truncate">
+                                <h3 class="font-semibold text-sm text-[#005281] leading-tight whitespace-normal break-words">
                                     {{ $product->name }}</h3>
                                 <p class="text-[#e17f12] font-semibold text-xs mt-1">
                                     Rp {{ number_format($product->harga_jual, 0, ',', '.') }}
@@ -367,6 +399,10 @@
                         class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium">
                         Pay with QRIS
                     </button>
+                    <button onclick="processDebitPayment()"
+                        class="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium">
+                        Pay with Debit
+                    </button>
                     <button onclick="printReceipt()"
                         class="w-full border border-gray-300 py-3 rounded-lg hover:bg-gray-50 transition-colors font-medium">
                         Print Receipt
@@ -378,13 +414,13 @@
                 </div>
 
                 <!-- Hidden Forms -->
-              <form action="{{ route(name: 'kasir.transaksi.store') }}" method="POST">
+              <form id="transactionForm" action="{{ route('kasir.transaksi.store') }}" method="POST">
 
                     @csrf
                     <input type="hidden" name="subtotal" id="transaction_subtotal">
                     <input type="hidden" name="total_cost_harga_jual" id="transaction_total_cost_harga_jual">
                     <input type="hidden" name="name_user" id="transaction_name_user" value="{{ Auth::user()->name }}">
-                    <input type="hidden" name="payment_method" id="transaction_payment_method" value="tunai">
+                    <input type="hidden" name="payment_method" id="transaction_payment_method" value="cash">
                     <input type="hidden" name="timestamp" id="transaction_timestamp">
                 </form>
 
@@ -397,6 +433,18 @@
                         value="{{ Auth::user()->name }}">
                     <input type="hidden" name="payment_method" id="transaction_qris_payment_method" value="qris">
                     <input type="hidden" name="timestamp" id="transaction_qris_timestamp">
+                </form>
+
+                <form id="transactionDebitForm" method="POST" action="{{ route('kasir.transaksi.store') }}"
+                    style="display:none;">
+                    @csrf
+                    <input type="hidden" name="subtotal" id="transaction_debit_subtotal">
+                    <input type="hidden" name="total_cost_harga_jual" id="transaction_debit_total_cost_harga_jual">
+                    <input type="hidden" name="name_user" id="transaction_debit_name_user"
+                        value="{{ Auth::user()->name }}">
+                    <input type="hidden" name="payment_method" id="transaction_debit_payment_method" value="debit">
+                    <input type="hidden" name="timestamp" id="transaction_debit_timestamp">
+                    <input type="hidden" name="payment_method" value="debit">
                 </form>
 
             </section>
@@ -413,17 +461,18 @@
     <script src="{{ asset('assets/js/cashier/product-controls.js') }}"></script>
     <script src="{{ asset('assets/js/cashier/order-management.js') }}"></script>
     <script src="{{ asset('assets/js/cashier/payment-system.js') }}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{{ asset('assets/js/cashier/kasir-init.js') }}"></script>
     
-    {{-- <script>
-        const subcategoryOptions = @json($subcategories);
-    
+    <!-- Image Modal Function and Error Handler -->
+    <script>
+        // Dynamic subcategory population from backend
+        const subcategoryOptions = @json($subcategoryMap);
+
         function updateSubcategories(selectedCategory) {
             const subcategorySelect = document.getElementById('subcategorySelect');
             subcategorySelect.innerHTML = `<option value="">-- Pilih Subkategori --</option>`;
-    
             if (selectedCategory && subcategoryOptions[selectedCategory]) {
-                subcategoryOptions[selectedCategory].forEach(sub => {
+                subcategoryOptions[selectedCategory].forEach(function (sub) {
                     const opt = document.createElement('option');
                     opt.value = sub;
                     opt.textContent = sub;
@@ -431,6 +480,47 @@
                 });
             }
         }
-    </script> --}}
+
+        function showImageModal(imageSrc, productName) {
+            if (!imageSrc || !productName) return;
+            
+            Swal.fire({
+                html: `<img src="${imageSrc}" alt="${productName}" class="max-w-full max-h-80 rounded-lg shadow-lg mx-auto object-contain" style="max-width: 600px; max-height: 320px;" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2U1ZTdlYiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBub3QgZm91bmQ8L3RleHQ+PC9zdmc+'; this.style.width='200px'; this.style.height='200px'; this.style.objectFit='contain';" />`,
+                title: productName,
+                showConfirmButton: true,
+                confirmButtonText: 'Tutup',
+                width: 'auto',
+                maxWidth: '90vw',
+                padding: '1.5rem',
+                background: '#fff',
+                customClass: {
+                    popup: 'rounded-lg'
+                }
+            });
+        }
+
+        // Handle image loading errors
+        function handleImageError(imgElement) {
+            imgElement.style.display = 'none';
+            const fallback = imgElement.nextElementSibling || imgElement.parentElement.querySelector('[data-fallback-image]');
+            if (fallback) {
+                fallback.classList.remove('hidden');
+                fallback.classList.add('flex');
+            }
+        }
+
+        // Ensure all product images handle errors properly
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('img[data-product-image]').forEach(function(img) {
+                if (!img.onerror) {
+                    img.onerror = function() {
+                        handleImageError(this);
+                    };
+                }
+            });
+        });
+    </script>
+    
+    
 @endpush
 

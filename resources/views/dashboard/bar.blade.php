@@ -1,53 +1,131 @@
 @extends('layouts.admin')
 
 @section('content')
-<main class="mt-16 overflow-y-auto h-[calc(100vh-4rem)] p-4">
-             @yield('content')
-             @php
-                 use Illuminate\Support\Facades\Auth;
-                 use Carbon\Carbon;
+<div class="p-6 space-y-6">
+    <!-- Header -->
+    <div class="bg-white p-6 rounded-xl shadow-lg">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Bar Dashboard</h1>
+                <p class="text-gray-600 mt-2">Manage and prepare drink orders</p>
+            </div>
+            <div class="px-4 py-2 bg-blue-600 text-white rounded-lg">
+                <i class="bi bi-cup-hot mr-2"></i>
+                <span class="font-semibold">{{ $orders->count() }} Active Orders</span>
+            </div>
+        </div>
+    </div>
 
-                 $user = Auth::user();
-                 $today = Carbon::now()->locale('id')->translatedFormat('l, d F Y');
-             @endphp
+    <!-- Orders List -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        @forelse ($orders as $order)
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden transition-transform duration-300 hover:scale-105">
+                <!-- Order Header -->
+                <div class="bg-gradient-to-r from-blue-600 to-blue-800 p-4 text-white">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="font-bold text-lg">{{ $order->order_number }}</h3>
+                            <p class="text-sm opacity-90">{{ $order->created_at->format('H:i') }}</p>
+                        </div>
+                        <span class="px-3 py-1 bg-white/20 rounded-full text-xs font-semibold uppercase">
+                            {{ $order->status }}
+                        </span>
+                    </div>
+                </div>
 
-             <div class="bg-white p-6 rounded-xl shadow-lg mb-6 relative overflow-hidden">
-                 <div class="absolute right-0 top-0 w-32 h-32 bg-[#005281]/5 rounded-bl-full"></div>
+                <!-- Order Content -->
+                <div class="p-4">
+                    <div class="mb-4">
+                        <p class="text-sm text-gray-600 mb-2">
+                            <i class="bi bi-person mr-1"></i>
+                            {{ $order->transaction->user->name ?? 'Cashier' }}
+                        </p>
+                        <p class="text-sm text-gray-600">
+                            <i class="bi bi-receipt mr-1"></i>
+                            {{ $order->transaction->invoice }}
+                        </p>
+                    </div>
 
-                 <div class="flex items-center gap-6 relative">
-                     {{-- Foto atau Icon --}}
-                     @if ($user->profile_image ?? false)
-                         <img src="{{ asset('storage/' . $user->profile_image) }}" alt="Foto Profil"
-                             class="w-16 h-16 rounded-full object-cover border-2 border-[#005281]">
-                     @else
-                         <div class="flex items-center justify-center w-16 h-16 bg-[#005281]/10 rounded-full">
-                             <i class="bi bi-person-circle text-4xl text-[#005281]"></i>
-                         </div>
-                     @endif
+                    <!-- Items List -->
+                    <div class="border-t pt-3 space-y-2 max-h-48 overflow-y-auto">
+                        @foreach ($order->transaction->items as $item)
+                            <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-gray-800">{{ $item->product->name }}</p>
+                                    <p class="text-xs text-gray-500">Qty: {{ $item->qty }}</p>
+                                </div>
+                                <p class="text-sm font-semibold text-blue-600">
+                                    Rp {{ number_format($item->subtotal, 0, ',', '.') }}
+                                </p>
+                            </div>
+                        @endforeach
+                    </div>
 
-                     <div class="space-y-2">
-                         {{-- Nama dan Role --}}
-                         <div class="flex items-center gap-3">
-                             <h2 class="text-2xl font-semibold text-gray-700">Halo {{ $user->name ?? 'User' }}!</h2>
-                             @if ($user->role ?? false)
-                                 <span class="px-3 py-1 text-sm bg-[#005281]/10 text-[#005281] rounded-full capitalize">
-                                     {{ $user->role }}
-                                 </span>
-                             @endif
-                         </div>
+                    <!-- Total -->
+                    <div class="border-t pt-3 mt-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-semibold text-gray-700">Total:</span>
+                            <span class="text-lg font-bold text-[#005281]">
+                                Rp {{ number_format($order->transaction->total, 0, ',', '.') }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
 
-                         {{-- Tanggal Sekarang --}}
-                         <div class="flex items-center gap-2 text-sm text-gray-500">
-                             <i class="bi bi-clock"></i>
-                             <span>{{ $today }}</span>
-                         </div>
+                <!-- Action Buttons -->
+                <div class="px-4 py-3 bg-gray-50 space-x-2">
+                    @if($order->status == 'pending')
+                        <form method="POST" action="{{ route('bar.orders.update-status', $order) }}" class="inline-block">
+                            @csrf
+                            @method('POST')
+                            <input type="hidden" name="status" value="preparing">
+                            <button type="submit" class="w-full bg-[#005281] text-white px-4 py-2 rounded-lg hover:bg-[#004371] transition-colors font-medium text-sm">
+                                <i class="bi bi-play-circle mr-1"></i>Start Preparing
+                            </button>
+                        </form>
+                    @elseif($order->status == 'preparing')
+                        <form method="POST" action="{{ route('bar.orders.ready', $order) }}" class="inline-block">
+                            @csrf
+                            @method('POST')
+                            <button type="submit" class="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium text-sm">
+                                <i class="bi bi-check-circle mr-1"></i>Mark as Ready
+                            </button>
+                        </form>
+                    @elseif($order->status == 'ready')
+                        <div class="w-full bg-green-500 text-white px-4 py-2 rounded-lg text-center font-medium text-sm">
+                            <i class="bi bi-check2-circle mr-1"></i>Ready for Service
+                        </div>
+                    @endif
+                </div>
+            </div>
+        @empty
+            <div class="col-span-full bg-white rounded-xl shadow-lg p-12 text-center">
+                <i class="bi bi-inbox text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-xl font-semibold text-gray-600 mb-2">No Orders Yet</h3>
+                <p class="text-gray-500">Waiting for drink orders...</p>
+            </div>
+        @endforelse
+    </div>
+</div>
 
-                         {{-- Pesan Selamat Datang --}}
-                         <p class="text-gray-600 text-sm">
-                             Selamat datang di dashboard untuk melihat data real-time dan performa bisnis Anda.
-                         </p>
-                     </div>
-                 </div>
-             </div>
-         </main>
+@push('scripts')
+<script>
+    // Auto-refresh every 30 seconds
+    setTimeout(function(){
+        window.location.reload();
+    }, 30000);
+
+    // Realtime via Echo if available
+    if (window.Echo) {
+        try {
+            window.Echo.channel('orders.bar')
+                .listen('.order.created', function (e) {
+                    window.location.reload();
+                });
+        } catch (err) {
+            console.warn('Echo not initialized:', err);
+        }
+    }
+</script>
+@endpush
 @endsection
