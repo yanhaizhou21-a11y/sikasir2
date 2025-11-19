@@ -106,7 +106,7 @@ Sikasir adalah sistem point of sale (POS) yang dirancang khusus untuk restoran a
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/username/sikasir.git
+git clone https://github.com/yanhaizhou21-a11y/sikasir2.git
 cd sikasir
 ```
 
