@@ -66,7 +66,7 @@ A comprehensive Point of Sale (POS) system built with Laravel 12, designed for c
 
 1. **Clone the repository**
    ```bash
-   git clone -b Yanhai 
+   git clone -b Yanhai https://github.com/yanhaizhou21-a11y/sikasir2.git
    cd sikasir
    ```
 
